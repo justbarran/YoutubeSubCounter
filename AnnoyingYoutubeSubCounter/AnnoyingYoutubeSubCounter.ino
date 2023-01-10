@@ -23,8 +23,10 @@
 // (Skipping these may work OK on your workbench but can fail in the field)
 #include <Adafruit_NeoPixel.h> /* https://github.com/adafruit/Adafruit_NeoPixel v1.10.6 */
 
-#define API_KEY "--GOOGLE API KEY---"
-#define CHANNEL_ID "--Youtube channel ID--"
+char ssid[] = "your ssid ";     
+char password[] = "wifi password";
+#define API_KEY "google api key"
+#define CHANNEL_ID "yt channel id you want to track"
 
 #define BUTTON D1
 #define SERVO_PIN D2
@@ -38,7 +40,7 @@
 #define SERVO_Delay 100
 
 #define NUM_LEDS    13
-#define BRIGHTNESS  200 //max 255
+#define BRIGHTNESS  255 //max 255
 #define LED_TYPE    WS2812B
 #define COLOR_ORDER GRB
 
@@ -65,8 +67,7 @@ uint16_t      pixelNumber = NUM_LEDS;  // Total Number of Pixels
 static HTTPClient http;
 static int httpError;
 
-char ssid[] = "Your Wifi SSID"; 
-char password[] = "Your Password";
+
 
 struct Stats {
   long viewCount;
@@ -210,15 +211,20 @@ void loop() {
       subs_water_mark = myStats.subCount;
       bell_ring_flag = 0;
     }
-    else if(leds_flag == 0)
+    else 
     {
-      leds_flag = 1;
-    }
-    else
-    {
-      leds_flag = 0;
-      strip.clear();
-      strip.show();
+      patternCurrent++;                                         //  Advance to next pattern
+      if(patternCurrent > 4)
+      {
+        leds_flag = 0;
+        patternCurrent = 0;
+        strip.clear();
+        strip.show();
+      }  
+      else
+      {
+        leds_flag = 1;
+      }    
     }
     delay(500); //Debounce 
   }
@@ -260,6 +266,7 @@ void loop() {
   {
     bell_ring_flag = 1;
     leds_flag = 1;
+    patternCurrent = 1;
   }
 
   if(leds_flag == 1)
@@ -267,7 +274,24 @@ void loop() {
     if(currentMillis - pixelPrevious >= pixelInterval) 
     {        //  Check for expired time
       pixelPrevious = currentMillis;                            //  Run current frame
-      rainbow(10);
+      switch (patternCurrent) {
+      case 1:
+        rainbow(15); // Flowing rainbow cycle along the whole strip
+        break;     
+      case 2:
+        colorWipe(strip.Color(0, 0, 255), 50); // Blue
+        break;
+      case 3:
+        colorWipe(strip.Color(0, 255, 0), 50); // Green
+        break;  
+      case 4:
+        colorWipe(strip.Color(255, 0, 0), 50); // Red
+      break;        
+      default:
+        strip.clear();
+        strip.show();
+      break;
+    }
     }
   }
 }
@@ -323,6 +347,21 @@ void rainbow(uint8_t wait) {
   pixelCycle++;                             //  Advance current cycle
   if(pixelCycle >= 256)
     pixelCycle = 0;                         //  Loop the cycle back to the begining
+}
+
+// Fill strip pixels one after another with a color. Strip is NOT cleared
+// first; anything there will be covered pixel by pixel. Pass in color
+// (as a single 'packed' 32-bit value, which you can get by calling
+// strip.Color(red, green, blue) as shown in the loop() function above),
+// and a delay time (in milliseconds) between pixels.
+void colorWipe(uint32_t color, int wait) {
+  if(pixelInterval != wait)
+    pixelInterval = wait;                   //  Update delay time
+  strip.setPixelColor(pixelCurrent, color); //  Set pixel's color (in RAM)
+  strip.show();                             //  Update strip to match
+  pixelCurrent++;                           //  Advance current pixel
+  if(pixelCurrent >= pixelNumber)           //  Loop the pattern from the first LED
+    pixelCurrent = 0;
 }
 
 // Input a value 0 to 255 to get a color value.
