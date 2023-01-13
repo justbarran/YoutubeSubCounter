@@ -1,32 +1,29 @@
-/*
+/*==============================================
 * Annoying Youtube Sub counter by Just Barran
 * Like and Subscribe @justbarran 
 * Youtub, Instagram, Facebook, Tictok 
-* www.youtube.com/c/justbarran
+* https://www.youtube.com/c/justbarran
+*===============================================
 */
 
-#include "LedController.hpp" /* https://github.com/noah1510/LedController  v2.0.1*/
-#include <ESP32Servo.h> /*https://madhephaestus.github.io/ESP32Servo/annotated.html v0.12.0 */
 
-#include <WiFi.h>
-#include <HTTPClient.h>
-#include <ArduinoJson.h> /* https://arduinojson.org/?utm_source=meta&utm_medium=library.properties v6.20.0 */
+/* ===================================================================
+* Getting Started with Seeed Studio XIAO ESP32C3
+* https://wiki.seeedstudio.com/XIAO_ESP32C3_Getting_Started/
+* ===================================================================*/
 
-// NEOPIXEL BEST PRACTICES for most reliable operation:
-// - Add 1000 uF CAPACITOR between NeoPixel strip's + and - connections.
-// - MINIMIZE WIRING LENGTH between microcontroller board and first pixel.
-// - NeoPixel strip's DATA-IN should pass through a 300-500 OHM RESISTOR.
-// - AVOID connecting NeoPixels on a LIVE CIRCUIT. If you must, ALWAYS
-//   connect GROUND (-) first, then +, then data.
-// - When using a 3.3V microcontroller with a 5V-powered NeoPixel strip,
-//   a LOGIC-LEVEL CONVERTER on the data line is STRONGLY RECOMMENDED.
-// (Skipping these may work OK on your workbench but can fail in the field)
-#include <Adafruit_NeoPixel.h> /* https://github.com/adafruit/Adafruit_NeoPixel v1.10.6 */
+/*==============================================*/
+/*===============Enter info here ===============*/
+/*==============================================*/
 
 char ssid[] = "your ssid ";     
 char password[] = "wifi password";
-#define API_KEY "google api key"
-#define CHANNEL_ID "yt channel id you want to track"
+#define API_KEY "google api key" //https://developers.google.com/youtube/v3/getting-started
+#define CHANNEL_ID "yt channel id you want to track"  //https://support.google.com/youtube/answer/3250431?hl=en
+
+/*==============================================*/
+/*===================== SETTINGS ===============*/
+/*==============================================*/
 
 #define BUTTON D1
 #define SERVO_PIN D2
@@ -40,9 +37,27 @@ char password[] = "wifi password";
 #define SERVO_Delay 100
 
 #define NUM_LEDS    13
-#define BRIGHTNESS  255 //max 255
+#define BRIGHTNESS  255 //0 - 255
 #define LED_TYPE    WS2812B
 #define COLOR_ORDER GRB
+#define LED_INTENSITY 10 //0 - 15
+
+#define BUTTON_WAIT 250
+
+/*==============================================*/
+/*===================== LIBRARIES ==============*/
+/*==============================================*/
+
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include "LedController.hpp"    /* https://github.com/noah1510/LedController  v2.0.1*/
+#include <ESP32Servo.h>         /*https://madhephaestus.github.io/ESP32Servo/annotated.html v0.12.0 */
+#include <ArduinoJson.h>        /* https://arduinojson.org/?utm_source=meta&utm_medium=library.properties v6.20.0 */
+#include <Adafruit_NeoPixel.h>  /* https://github.com/adafruit/Adafruit_NeoPixel v1.10.6 */
+
+/*==============================================*/
+/*===================== CODE BELOW ==============*/
+/*==============================================*/
 
 /*
  Now we need a LedController Variable to work with.
@@ -138,6 +153,7 @@ unsigned long api_mtbs = 5000; //mean time between api requests
 unsigned long api_lasttime;   //last time api request has been done
 unsigned long subs_water_mark = 0; 
 unsigned long present_subs = 0; 
+unsigned long button_time_last = 0;
 
 byte start_up_flag =  0;
 byte button_state_last =  HIGH;
@@ -175,27 +191,31 @@ void setup() {
   //Here a new LedController object is created without hardware SPI.
   lc=LedController<1,1>(MAX_DIN,MAX_CLK,MAX_CS);
   /* Set the brightness to a medium values 0 - 15 */
-  lc.setIntensity(10);
+  lc.setIntensity(LED_INTENSITY);
   /* and clear the display */
   lc.clearMatrix();
-
+  PrintNumber(999999U);
   /* Explicitly set the ESP32 to be a WiFi-client, otherwise, it by default,
      would try to act as both a client and an access-point and could cause
      network-issues with your other WiFi-devices on your WiFi-network. */
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED){
     Serial.print(".");
     delay(500);
-  }
+  }  
   Serial.println("");
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
+
   IPAddress ip = WiFi.localIP();
   Serial.println(ip);
   strip.begin();           // INITIALIZE NeoPixel strip object (REQUIRED)
   strip.show();            // Turn OFF all pixels ASAP
   strip.setBrightness(BRIGHTNESS); // Set BRIGHTNESS to about 1/5 (max = 255)
+
+  patternCurrent=1;
+  leds_flag=1;
 }
 
 
@@ -204,8 +224,9 @@ void loop() {
   unsigned long currentMillis = millis();                     //  Update current time
 
   byte button_state = digitalRead(BUTTON);
-  if(button_state == LOW && button_state_last == HIGH)
+  if((button_state == LOW) && (button_state_last == HIGH) && ((currentMillis - button_time_last) > BUTTON_WAIT))
   {    
+    button_time_last = currentMillis;
     if(bell_ring_flag == 1)
     {
       subs_water_mark = myStats.subCount;
@@ -214,20 +235,23 @@ void loop() {
     else 
     {
       patternCurrent++;                                         //  Advance to next pattern
-      if(patternCurrent > 4)
+      if(patternCurrent > 5)
       {
         leds_flag = 0;
         patternCurrent = 0;
         strip.clear();
         strip.show();
+        lc.clearMatrix();
       }  
       else
       {
         leds_flag = 1;
+        strip.setBrightness(BRIGHTNESS);
+        lc.setIntensity(LED_INTENSITY);
+        PrintNumber(myStats.subCount);
       }    
     }
-    delay(500); //Debounce 
-  }
+  }  
   button_state_last = button_state;
 
   if (WiFi.status() == WL_CONNECTED) {
@@ -242,8 +266,11 @@ void loop() {
         Serial.println(myStats.viewCount);
         Serial.print("Video Count: ");
         Serial.println(myStats.videoCount);
-        Serial.println("------------------------");      
-        PrintNumber(myStats.subCount);
+        Serial.println("------------------------");   
+        if(leds_flag>0)
+        {
+          PrintNumber(myStats.subCount);
+        }           
         if(start_up_flag == 0)
         {
           subs_water_mark = myStats.subCount;
@@ -264,6 +291,7 @@ void loop() {
   }
   else if(myStats.subCount > subs_water_mark )
   {
+    PrintNumber(myStats.subCount);
     bell_ring_flag = 1;
     leds_flag = 1;
     patternCurrent = 1;
@@ -286,10 +314,20 @@ void loop() {
         break;  
       case 4:
         colorWipe(strip.Color(255, 0, 0), 50); // Red
-      break;        
-      default:
+      break;  
+      case 5:
+        /* turn off leds */
         strip.clear();
         strip.show();
+      break;       
+      case 6:
+        /* Add another pathern */
+      break;    
+      default:
+       /* turn off everything */
+        strip.clear();
+        strip.show();
+        lc.clearMatrix();
       break;
     }
     }
