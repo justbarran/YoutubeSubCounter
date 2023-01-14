@@ -21,7 +21,7 @@ You would need to add the ESP32 board to the Arduino IDE if you don't have it al
 
 Needed Arduino Libraries that need to be added via Arduino library manager: 
 
-https://github.com/noah1510 /LedController  v2.0.1
+https://github.com/noah1510/LedController  v2.0.1
 
 https://madhephaestus.github.io/ESP32Servo/annotated.html v0.12.0 
 
