@@ -4,8 +4,11 @@ Annoying Youtube Sub counter by Just Barran
 * https://www.youtube.com/c/justbarran
 
 Youtube video: https://youtu.be/Xyod39A879Y
+
 Full Instructables: 
+
 Code V2: https://github.com/justbarran/YoutubeSubCounter
+
 3D Files: https://www.thingiverse.com/thing:5786711
 
 I am using Arduino 2.03 at the time of this Instructables:
