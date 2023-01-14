@@ -50,7 +50,7 @@ char password[] = "wifi password";
 
 #include <WiFi.h>
 #include <HTTPClient.h>
-#include "LedController.hpp"    /* https://github.com/noah1510/LedController  v2.0.1*/
+#include "LedController.hpp"    /* https://github.com/noah1510/LedController  v2.0.1 */
 #include <ESP32Servo.h>         /*https://madhephaestus.github.io/ESP32Servo/annotated.html v0.12.0 */
 #include <ArduinoJson.h>        /* https://arduinojson.org/?utm_source=meta&utm_medium=library.properties v6.20.0 */
 #include <Adafruit_NeoPixel.h>  /* https://github.com/adafruit/Adafruit_NeoPixel v1.10.6 */
