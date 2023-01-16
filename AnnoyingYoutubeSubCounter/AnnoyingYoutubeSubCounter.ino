@@ -43,7 +43,7 @@ char password[] = "wifi password";
 #define LED_INTENSITY 10 //0 - 15
 
 #define BUTTON_WAIT 250
-
+#define API_REQUEST_PERIOD 30000 //ms mean time between api requests, there is a daily 10k qouta so it should be more than 10 seconds. 
 /*==============================================*/
 /*===================== LIBRARIES ==============*/
 /*==============================================*/
@@ -149,7 +149,6 @@ bool getNrSubscriptions(HTTPClient *http, int *httpError, Stats *stats, const ch
   return 0;
 }
 
-unsigned long api_mtbs = 5000; //mean time between api requests
 unsigned long api_lasttime;   //last time api request has been done
 unsigned long subs_water_mark = 0; 
 unsigned long present_subs = 0; 
@@ -194,13 +193,21 @@ void setup() {
   lc.setIntensity(LED_INTENSITY);
   /* and clear the display */
   lc.clearMatrix();
-  PrintNumber(999999U);
+  PrintNumber(888888U);
   /* Explicitly set the ESP32 to be a WiFi-client, otherwise, it by default,
      would try to act as both a client and an access-point and could cause
      network-issues with your other WiFi-devices on your WiFi-network. */
+  delay(1000);  
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
+  byte waiting = 0;
   while (WiFi.status() != WL_CONNECTED){
+    waiting ++;
+    if(waiting>5)
+    {
+      waiting = 0;
+    }
+    PrintLoading(5-waiting);
     Serial.print(".");
     delay(500);
   }  
@@ -216,6 +223,9 @@ void setup() {
 
   patternCurrent=1;
   leds_flag=1;
+
+  PrintHello();
+  PrintWorld();
 }
 
 
@@ -255,13 +265,13 @@ void loop() {
   button_state_last = button_state;
 
   if (WiFi.status() == WL_CONNECTED) {
-    if (millis() - api_lasttime > api_mtbs) {      
+    if ((millis() - api_lasttime) > API_REQUEST_PERIOD) {      
       if(getNrSubscriptions(&http, &httpError, &myStats, CHANNEL_ID, API_KEY, rootca)==1)
       {
         Serial.println("---------Stats---------");
         Serial.println("Just Barran");
         Serial.print("Subscriber Count: ");
-        Serial.println( myStats.subCount);
+        Serial.println(myStats.subCount);
         Serial.print("View Count: ");
         Serial.println(myStats.viewCount);
         Serial.print("Video Count: ");
@@ -280,6 +290,7 @@ void loop() {
       else
       {
         Serial.println("---------No Stats---------");
+        PrintError(1);
       }
       api_lasttime = millis();
     }
@@ -332,6 +343,46 @@ void loop() {
     }
     }
   }
+}
+
+void PrintHello()
+{
+  lc.setChar(0,5,'J',false);
+  lc.setChar(0,4,'U',false);
+  lc.setChar(0,3,'S',false);
+  lc.setChar(0,2,'T',false);
+  lc.setChar(0,1,' ',false);
+  lc.setChar(0,0,' ',false);
+  delay(1000);
+  lc.clearMatrix();
+}
+void PrintWorld()
+{
+  lc.setChar(0,5,'B',false);
+  lc.setChar(0,4,'A',false);
+  lc.setChar(0,3,'R',false);
+  lc.setChar(0,2,'R',false);
+  lc.setChar(0,1,'A',false);
+  lc.setChar(0,0,'N',false);
+  delay(1000);
+  lc.clearMatrix();
+}
+void PrintLoading(byte digit)
+{
+  lc.clearMatrix();
+  lc.setRow(0,digit,B00000001);  
+}
+
+void PrintError(byte code)
+{
+  lc.setChar(0,5,'e',false);
+  lc.setChar(0,4,'r',false);
+  lc.setChar(0,3,'r',false);
+  lc.setChar(0,2,' ',false);
+  lc.setChar(0,1,' ',false);
+  lc.setDigit(0,0,code,false);
+  delay(1000);
+  lc.clearMatrix();
 }
 
 void PrintNumber(long subs)
