@@ -4,6 +4,10 @@
 * Youtub, Instagram, Facebook, Tictok 
 * https://www.youtube.com/c/justbarran
 *===============================================
+* Some of the code was take from @CallousCoder on YT
+* So credit goes to, Please check out and support 
+* https://www.youtube.com/watch?v=56j4wTS5Bmo
+*
 */
 
 
