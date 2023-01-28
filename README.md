@@ -5,7 +5,7 @@ Annoying Youtube Sub counter by Just Barran
 
 Youtube video: https://youtu.be/Xyod39A879Y
 
-Some of the code was take from @CallousCoder on YT
+Some of the code was taken from @CallousCoder on YT
 
 So credit goes to him as well, Please check out and support his channel.
 
